@@ -1,0 +1,7 @@
+APP_ID = "7IAQXYIXWH-100"
+TOKEN_FILE = "fyers_token.txt"
+
+SYMBOLS = [
+    "NSE:NIFTY50-INDEX",
+    "NSE:NIFTYBANK-INDEX"
+]
