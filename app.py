@@ -1,41 +1,19 @@
-from flask import Flask, render_template, jsonify
-import threading, time
+from flask import Flask, jsonify
+from fyers_engine import live_data
 
-from fyers_engine import update, live_data
-from websocket_engine import start_ws
-from db import init_db, get_history
+import os
 
 app = Flask(__name__)
-init_db()
-
-# 🔥 START WEBSOCKET
-threading.Thread(target=start_ws, daemon=True).start()
-
-# 🔁 ENGINE LOOP
-def run_engine():
-    while True:
-        update()
-        time.sleep(3)
-
-threading.Thread(target=run_engine, daemon=True).start()
-
-# ================= ROUTES =================
 
 @app.route("/")
 def home():
-    return render_template("home.html", data={})
+    return "Algo Dashboard Running 🚀"
 
-@app.route("/api/home")
-def api_home():
-    return jsonify(live_data)
+@app.route("/data")
+def data():
+    return jsonify(live_data("NSE:NIFTY50-INDEX"))
 
-@app.route("/backtest")
-def backtest():
-    return render_template("backtest.html")
-
-@app.route("/api/backtest")
-def api_backtest():
-    return jsonify(get_history())
-
+# IMPORTANT FOR RENDER
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
