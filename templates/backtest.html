@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="topbar">
+  <span class="tb-title">Backtest</span>
+</div>
+
+<div class="page">
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Symbol</th>
+        <th>Spot</th>
+        <th>Call OI</th>
+        <th>Put OI</th>
+        <th>Trend</th>
+        <th>Direction</th>
+      </tr>
+    </thead>
+    <tbody id="bt"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadBT(){
+    const res = await fetch("/api/backtest");
+    const data = await res.json();
+
+    let html = "";
+    data.forEach(r=>{
+        html += `<tr>
+            <td>${r[0]}</td>
+            <td>${r[1]}</td>
+            <td>${r[2]}</td>
+            <td>${r[3]}</td>
+            <td>${r[4]}</td>
+            <td>${r[5]}</td>
+            <td>${r[6]}</td>
+        </tr>`;
+    });
+
+    document.getElementById("bt").innerHTML = html;
+}
+
+setInterval(loadBT, 5000);
+loadBT();
+</script>
+
+{% endblock %}

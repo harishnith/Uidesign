@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="topbar">
+  <div class="tb-left">
+    <span class="tb-title">Intraday Dashboard</span>
+    <span class="tb-sub" id="timeText"></span>
+  </div>
+  <div class="tb-right">
+    <span class="tb-clock" id="clock"></span>
+  </div>
+</div>
+
+<style>
+.intra-block{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+
+.intra-head{
+  padding:16px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--bg3);
+}
+
+.intra-name{
+  font-size:.9rem;
+  font-weight:800;
+  color:var(--accent);
+}
+
+.intra-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.intra-ltp{
+  font-size:1.8rem;
+  font-weight:800;
+}
+
+/* ✅ COLOR NEVER WHITE */
+.ltp-up {
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(34,211,165,.6);
+}
+
+.ltp-down {
+  color: var(--red);
+  text-shadow: 0 0 8px rgba(248,113,113,.6);
+}
+
+/* 🔥 REAL HEARTBEAT */
+.pulse {
+  animation: heartbeat 0.9s infinite;
+}
+
+@keyframes heartbeat {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.3); }
+  40%  { transform: scale(1); }
+  60%  { transform: scale(1.25); }
+  80%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.change-box{
+  font-size:.75rem;
+  font-weight:700;
+  padding:3px 8px;
+  border-radius:4px;
+}
+
+.ohlc-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+}
+
+.ohlc-cell{
+  padding:14px;
+  border-right:1px solid var(--border);
+}
+
+.ohlc-cell:last-child{border-right:none;}
+
+.ohlc-lbl{
+  font-size:.6rem;
+  color:var(--muted);
+}
+
+.ohlc-val{
+  font-size:1rem;
+  font-weight:600;
+}
+</style>
+
+<div class="page">
+
+<!-- NIFTY -->
+<div class="intra-block">
+  <div class="intra-head">
+    <div class="intra-name">NIFTY 50</div>
+    <div class="intra-right">
+      <div class="intra-ltp" id="ltp-0"></div>
+      <div id="chg-0" class="change-box"></div>
+    </div>
+  </div>
+  <div class="ohlc-grid">
+    <div class="ohlc-cell"><div class="ohlc-lbl">Open</div><div id="open-0"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">High</div><div id="high-0" style="color:var(--red)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Low</div><div id="low-0" style="color:var(--green)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Close</div><div id="close-0"></div></div>
+  </div>
+</div>
+
+<!-- BANK -->
+<div class="intra-block">
+  <div class="intra-head">
+    <div class="intra-name">BANK NIFTY</div>
+    <div class="intra-right">
+      <div class="intra-ltp" id="ltp-1"></div>
+      <div id="chg-1" class="change-box"></div>
+    </div>
+  </div>
+  <div class="ohlc-grid">
+    <div class="ohlc-cell"><div class="ohlc-lbl">Open</div><div id="open-1"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">High</div><div id="high-1" style="color:var(--red)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Low</div><div id="low-1" style="color:var(--green)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Close</div><div id="close-1"></div></div>
+  </div>
+</div>
+
+<!-- SENSEX -->
+<div class="intra-block">
+  <div class="intra-head">
+    <div class="intra-name">SENSEX</div>
+    <div class="intra-right">
+      <div class="intra-ltp" id="ltp-2"></div>
+      <div id="chg-2" class="change-box"></div>
+    </div>
+  </div>
+  <div class="ohlc-grid">
+    <div class="ohlc-cell"><div class="ohlc-lbl">Open</div><div id="open-2"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">High</div><div id="high-2" style="color:var(--red)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Low</div><div id="low-2" style="color:var(--green)"></div></div>
+    <div class="ohlc-cell"><div class="ohlc-lbl">Close</div><div id="close-2"></div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let previous = { nifty:null, bank:null, sensex:null };
+
+function isMarketOpen(){
+  const now = new Date();
+  return (now.getHours() < 15 || (now.getHours()==15 && now.getMinutes()<30));
+}
+
+function calcChange(ltp, close){
+  const diff = ltp - close;
+  const pct = close !== 0 ? (diff / close * 100) : 0;
+  return { diff, pct };
+}
+
+function update(i, key, d){
+  const ltp = parseFloat(d.ltp);
+  const prev = previous[key];
+
+  const el = document.getElementById(`ltp-${i}`);
+
+  el.classList.remove("ltp-up","ltp-down","pulse");
+
+  if(prev !== null){
+    if(ltp > prev){
+      el.classList.add("ltp-up");
+    } else if(ltp < prev){
+      el.classList.add("ltp-down");
+    }
+  }
+
+  if(isMarketOpen()){
+    el.classList.add("pulse");
+  }
+
+  el.innerText = ltp.toFixed(2);
+  previous[key] = ltp;
+
+  document.getElementById(`open-${i}`).innerText = d.open;
+  document.getElementById(`high-${i}`).innerText = d.high;
+  document.getElementById(`low-${i}`).innerText = d.low;
+  document.getElementById(`close-${i}`).innerText = d.close;
+
+  const { diff, pct } = calcChange(ltp, parseFloat(d.close));
+  const chg = document.getElementById(`chg-${i}`);
+
+  chg.innerHTML = `${diff>0?"▲":"▼"} ${diff.toFixed(1)} pts (${pct.toFixed(2)}%)`;
+
+  if(diff > 0){
+    chg.style.color = "var(--green)";
+    chg.style.background = "rgba(34,211,165,.12)";
+  } else {
+    chg.style.color = "var(--red)";
+    chg.style.background = "rgba(248,113,113,.1)";
+  }
+}
+
+async function fetchData(){
+  const res = await fetch("/api/intraday");  // ✅ FIXED
+  const data = await res.json();
+
+  update(0,"nifty",data.nifty);
+  update(1,"bank",data.bank);
+  update(2,"sensex",data.sensex);
+
+  document.getElementById("timeText").innerText =
+    "Updated: " + new Date().toLocaleTimeString();
+}
+
+setInterval(()=>{
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString();
+},1000);
+
+setInterval(fetchData,5000);
+fetchData();
+</script>
+
+{% endblock %}
